@@ -9,5 +9,5 @@ LIST_PAST_URL = "https://streamyard.com/api/broadcasts?isComplete=true"
 
 EMAIL = config("EMAIL")
 LOCAL_DOWNLOAD_PATH = config("LOCAL_DOWNLOAD_PATH")
-
+CHUNK_SIZE= int(config("CHUNK_SIZE"))
 MAX_THREADS = config("MAX_THREADS")

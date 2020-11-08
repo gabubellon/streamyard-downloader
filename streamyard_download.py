@@ -36,7 +36,7 @@ class StreamYardDownload:
             else:
                 dl = 0
                 total_length = int(total_length)
-                for data in response.iter_content(chunk_size=4096):
+                for data in response.iter_content(chunk_size=config.CHUNK_SIZE):
                     dl += len(data)
                     f.write(data)
                     done = int(100 * dl / total_length)
@@ -108,15 +108,15 @@ class StreamYardDownload:
             )
         return broadcast_to_download
 
-    def dowload(self):
-        broadcast_to_download = self.create_download_list()
+    def dowload(self,broadcast_to_download):
 
         with ProcessPoolExecutor(max_workers=int(config.MAX_THREADS)) as executor:
             future_executor = {
                 executor.submit(
-                    self.download_broadcast, self.request_session, item
+                    self.download_broadcast,
+                    item
                 ): item.get("stream_id")
-                for item in broadcast_to_download
+                for item in broadcast_to_download[:2]
             }
 
         for future in futures.as_completed(future_executor):
@@ -150,23 +150,25 @@ class StreamYardDownload:
             config.DOWNLOAD_URL.format(stream_id=stream_id)
         )
 
-        logger.info(f"Download do audio")
-        self.download_file(
-            file_name=audio_filename,
-            request_url=json.loads(download_url.text).get("audioUrl"),
-        )
+        if json.loads(download_url.text).get("audioUrl"):
+            logger.info(f"Download do audio")
+            self.download_file(
+                file_name=audio_filename,
+                request_url=json.loads(download_url.text).get("audioUrl"),
+            )
 
-        logger.info(f"Download do video")
-        self.download_file(
-            file_name=video_filename,
-            request_url=json.loads(download_url.text).get("videoUrl"),
-        )
+        if json.loads(download_url.text).get("videoUrl"):
+            logger.info(f"Download do video")
+            self.download_file(
+                file_name=video_filename,
+                request_url=json.loads(download_url.text).get("videoUrl"),
+            )
 
         return file_name
 
     def start_download(self):
         self.login()
-        self.dowload()
+        self.dowload(self.create_download_list())
 
 
 if __name__ == "__main__":
