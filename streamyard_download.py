@@ -11,16 +11,16 @@ from loguru import logger
 
 import config
 
-class StreamYardDownload():
-    
+
+class StreamYardDownload:
     def __init__(self):
         self.request_session = self.create_session()
 
     def create_session(self):
         logger.info("Criando Sessão")
         return requests.session()
-        
-    def download_file(self,file_name,request_url):
+
+    def download_file(self, file_name, request_url):
         show_log = True
         previus_done = None
         with open(os.path.join(config.LOCAL_DOWNLOAD_PATH, file_name), "wb") as f:
@@ -61,9 +61,9 @@ class StreamYardDownload():
         logger.info("Requisitando Código")
 
         self.request_session.post(
-            config.CODE_URL, 
-            data=self.payload_token(self.TOKEN), 
-            headers=dict(Referer=config.CODE_URL)
+            config.CODE_URL,
+            data=self.payload_token(self.TOKEN),
+            headers=dict(Referer=config.CODE_URL),
         )
 
     @staticmethod
@@ -71,8 +71,8 @@ class StreamYardDownload():
         logger.info("Carregando Cookie")
         return input(f"Insira o código de login enviado para {config.EMAIL}:")
 
-    @staticmethod 
-    def payload_login(token,email_code):
+    @staticmethod
+    def payload_login(token, email_code):
         return dict(email=config.EMAIL, csrfToken=token, otpToken=email_code)
 
     def login(self):
@@ -83,7 +83,7 @@ class StreamYardDownload():
 
         self.request_session.post(
             config.LOGIN_URL,
-            data=self.payload_login(self.TOKEN,self.read_email_code()),
+            data=self.payload_login(self.TOKEN, self.read_email_code()),
             headers=dict(Referer=config.LOGIN_URL),
         )
 
@@ -113,9 +113,9 @@ class StreamYardDownload():
 
         with ProcessPoolExecutor(max_workers=int(config.MAX_THREADS)) as executor:
             future_executor = {
-                executor.submit(self.download_broadcast, self.request_session, item): item.get(
-                    "stream_id"
-                )
+                executor.submit(
+                    self.download_broadcast, self.request_session, item
+                ): item.get("stream_id")
                 for item in broadcast_to_download
             }
 
@@ -123,7 +123,7 @@ class StreamYardDownload():
             file_name = future.result()
             logger.info(f"Download da stream {file_name} completo ")
 
-    def download_broadcast(self,stream_info):
+    def download_broadcast(self, stream_info):
         stream_id = stream_info.get("stream_id")
         file_name = stream_info.get("file_name")
         video_filename = stream_info.get("video_filename")
@@ -146,7 +146,9 @@ class StreamYardDownload():
 
             time.sleep(10)
 
-        download_url = self.request_session.get(config.DOWNLOAD_URL.format(stream_id=stream_id))
+        download_url = self.request_session.get(
+            config.DOWNLOAD_URL.format(stream_id=stream_id)
+        )
 
         logger.info(f"Download do audio")
         self.download_file(
@@ -163,8 +165,9 @@ class StreamYardDownload():
         return file_name
 
     def start_download(self):
-       self.login()
-       self.dowload()
+        self.login()
+        self.dowload()
+
 
 if __name__ == "__main__":
     streamyardown = StreamYardDownload()
