@@ -9,5 +9,7 @@ LIST_PAST_URL = "https://streamyard.com/api/broadcasts?isComplete=true"
 
 EMAIL = config("EMAIL")
 LOCAL_DOWNLOAD_PATH = config("LOCAL_DOWNLOAD_PATH")
+
+MAX_THREADS = config("MAX_THREADS")
 TOKEN = ""
 CODE = ""

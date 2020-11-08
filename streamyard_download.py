@@ -3,6 +3,8 @@ import os
 import re
 import sys
 import time
+from concurrent import futures
+from concurrent.futures import ProcessPoolExecutor
 
 import requests
 from loguru import logger
@@ -11,7 +13,8 @@ import config
 
 
 def download_file(file_name, request_session, request_url):
-
+    show_log = True
+    previus_done = None
     with open(os.path.join(config.LOCAL_DOWNLOAD_PATH, file_name), "wb") as f:
         print(
             f"Downloading {file_name} para {os.path.join(config.LOCAL_DOWNLOAD_PATH,file_name)}"
@@ -28,10 +31,14 @@ def download_file(file_name, request_session, request_url):
             for data in response.iter_content(chunk_size=4096):
                 dl += len(data)
                 f.write(data)
-                done = int(50 * dl / total_length)
-                sys.stdout.write("\r[%s%s]" % ("=" * done, " " * (50 - done)))
-                sys.stdout.flush()
+                done = int(100 * dl / total_length)
 
+                if done != previus_done:
+                    show_log = True
+                if done in range(0, 100, 5) and show_log:
+                    logger.info(f"Donwload do arquivo {file_name} em {done}%")
+                    show_log = False
+                    previus_done = done
 
 def create_session():
     logger.info("Criando Sessão")
@@ -96,50 +103,62 @@ def create_download_list(request_session):
     return broadcast_to_download
 
 
-def download_broadcasts(request_session):
+def start_donwload(request_session):
     broadcast_to_download = create_download_list(request_session)
 
-    for item in broadcast_to_download:
-
-        stream_id = item.get("stream_id")
-        file_name = item.get("file_name")
-        video_filename = item.get("video_filename")
-        audio_filename = item.get("audio_filename")
-
-        logger.info(f"Download stream id:{stream_id} name:{file_name}")
-
-        while True:
-            logger.info(f"Gerando Links de donwload")
-
-            make_urls = request_session.get(
-                config.CREATE_DOWNLOADS_URL.format(stream_id=stream_id)
+    with ProcessPoolExecutor(max_workers=int(config.MAX_THREADS)) as executor:
+        future_executor = {
+            executor.submit(download_broadcast, request_session, item): item.get(
+                "stream_id"
             )
-            status = json.loads(make_urls.text).get("status")
+            for item in broadcast_to_download
+        }
 
-            logger.info(f"Status: {status}")
+    for future in futures.as_completed(future_executor):
+        file_name = future.result()
+        logger.info(f"Download da stream {file_name} completo ")
 
-            if status != "creating":
-                break
 
-            time.sleep(10)
+def download_broadcast(request_session, stream_info):
+    stream_id = stream_info.get("stream_id")
+    file_name = stream_info.get("file_name")
+    video_filename = stream_info.get("video_filename")
+    audio_filename = stream_info.get("audio_filename")
 
-        download_url = request_session.get(
-            config.DOWNLOAD_URL.format(stream_id=stream_id)
+    logger.info(f"Download stream id:{stream_id} name:{file_name}")
+
+    while True:
+        logger.info(f"Gerando Links de donwload")
+
+        make_urls = request_session.get(
+            config.CREATE_DOWNLOADS_URL.format(stream_id=stream_id)
         )
+        status = json.loads(make_urls.text).get("status")
 
-        logger.info(f"Download do audio")
-        download_file(
-            file_name=audio_filename,
-            request_session=request_session,
-            request_url=json.loads(download_url.text).get("audioUrl"),
-        )
+        logger.info(f"Status: {status}")
 
-        logger.info(f"Download do video")
-        download_file(
-            file_name=video_filename,
-            request_session=request_session,
-            request_url=json.loads(download_url.text).get("videoUrl"),
-        )
+        if status != "creating":
+            break
+
+        time.sleep(10)
+
+    download_url = request_session.get(config.DOWNLOAD_URL.format(stream_id=stream_id))
+
+    logger.info(f"Download do audio")
+    download_file(
+        file_name=audio_filename,
+        request_session=request_session,
+        request_url=json.loads(download_url.text).get("audioUrl"),
+    )
+    
+    logger.info(f"Download do video")
+    download_file(
+        file_name=video_filename,
+        request_session=request_session,
+        request_url=json.loads(download_url.text).get("videoUrl"),
+    )
+
+    return file_name
 
 
 if __name__ == "__main__":
@@ -147,4 +166,4 @@ if __name__ == "__main__":
     get_cookie(request_session)
     request_code(request_session)
     login_streamyard(request_session)
-    download_broadcasts(request_session)
+    start_donwload(request_session)
