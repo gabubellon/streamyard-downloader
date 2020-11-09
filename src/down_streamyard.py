@@ -3,13 +3,14 @@ import os
 import re
 import sys
 import time
+import pandas as pd
 from concurrent import futures
 from concurrent.futures import ProcessPoolExecutor
 
 import requests
 from loguru import logger
 
-import config
+import config as cfg
 
 
 class StreamYardDownload:
@@ -23,9 +24,9 @@ class StreamYardDownload:
     def download_file(self, file_name, request_url):
         show_log = True
         previus_done = None
-        with open(os.path.join(config.LOCAL_DOWNLOAD_PATH, file_name), "wb") as f:
+        with open(os.path.join(cfg.LOCAL_DOWNLOAD_PATH, file_name), "wb") as f:
             print(
-                f"Downloading {file_name} para {os.path.join(config.LOCAL_DOWNLOAD_PATH,file_name)}"
+                f"Downloading {file_name} para {os.path.join(cfg.LOCAL_DOWNLOAD_PATH,file_name)}"
             )
 
             response = self.request_session.get(request_url, stream=True)
@@ -36,7 +37,7 @@ class StreamYardDownload:
             else:
                 dl = 0
                 total_length = int(total_length)
-                for data in response.iter_content(chunk_size=config.CHUNK_SIZE):
+                for data in response.iter_content(chunk_size=cfg.CHUNK_SIZE):
                     dl += len(data)
                     f.write(data)
                     done = int(100 * dl / total_length)
@@ -50,30 +51,30 @@ class StreamYardDownload:
 
     def get_cookie(self):
         logger.info("Carregando Cookie")
-        self.request_session.get(config.TOKEN_URL)
+        self.request_session.get(cfg.TOKEN_URL)
         self.TOKEN = self.request_session.cookies["csrfToken"]
 
     @staticmethod
     def payload_token(token):
-        return dict(email=config.EMAIL, csrfToken=token)
+        return dict(email=cfg.EMAIL, csrfToken=token)
 
     def request_code(self):
         logger.info("Requisitando Código")
 
         self.request_session.post(
-            config.CODE_URL,
+            cfg.CODE_URL,
             data=self.payload_token(self.TOKEN),
-            headers=dict(Referer=config.CODE_URL),
+            headers=dict(Referer=cfg.CODE_URL),
         )
 
     @staticmethod
     def read_email_code():
         logger.info("Carregando Cookie")
-        return input(f"Insira o código de login enviado para {config.EMAIL}:")
+        return input(f"Insira o código de login enviado para {cfg.EMAIL}:")
 
     @staticmethod
     def payload_login(token, email_code):
-        return dict(email=config.EMAIL, csrfToken=token, otpToken=email_code)
+        return dict(email=cfg.EMAIL, csrfToken=token, otpToken=email_code)
 
     def login(self):
         logger.info("Acessando StreamYard")
@@ -82,15 +83,21 @@ class StreamYardDownload:
         self.request_code()
 
         self.request_session.post(
-            config.LOGIN_URL,
+            cfg.LOGIN_URL,
             data=self.payload_login(self.TOKEN, self.read_email_code()),
-            headers=dict(Referer=config.LOGIN_URL),
+            headers=dict(Referer=cfg.LOGIN_URL),
         )
 
     def list_past_broadcast(self):
-        logger.info("Carregando Broadcast")
-        last_broadcast = self.request_session.get(config.LIST_PAST_URL)
-        return json.loads(last_broadcast.text).get("broadcasts")
+        logger.info(f"Carregando Broadcast do dia {cfg.FILTER_DATE.strftime('%Y-%m-%d') }")
+        last_broadcast = self.request_session.get(cfg.LIST_PAST_URL)
+
+        stream_df = pd.DataFrame(json.loads(last_broadcast.text).get("broadcasts"))
+        columns = ['date','id','title',]
+        stream_df['date'] = pd.to_datetime(stream_df.startedAt).dt.tz_convert('America/Sao_Paulo').dt.date
+        stream_df = stream_df[columns]
+
+        return stream_df.query('date == @cfg.FILTER_DATE').to_dict(orient='records')
 
     def create_download_list(self):
         broadcasts = self.list_past_broadcast()
@@ -110,13 +117,13 @@ class StreamYardDownload:
 
     def dowload(self,broadcast_to_download):
 
-        with ProcessPoolExecutor(max_workers=int(config.MAX_THREADS)) as executor:
+        with ProcessPoolExecutor(max_workers=int(cfg.MAX_THREADS)) as executor:
             future_executor = {
                 executor.submit(
                     self.download_broadcast,
                     item
                 ): item.get("stream_id")
-                for item in broadcast_to_download[:2]
+                for item in broadcast_to_download
             }
 
         for future in futures.as_completed(future_executor):
@@ -135,7 +142,7 @@ class StreamYardDownload:
             logger.info(f"Gerando Links de donwload")
 
             make_urls = self.request_session.get(
-                config.CREATE_DOWNLOADS_URL.format(stream_id=stream_id)
+                cfg.CREATE_DOWNLOADS_URL.format(stream_id=stream_id)
             )
             status = json.loads(make_urls.text).get("status")
 
@@ -147,7 +154,7 @@ class StreamYardDownload:
             time.sleep(10)
 
         download_url = self.request_session.get(
-            config.DOWNLOAD_URL.format(stream_id=stream_id)
+            cfg.DOWNLOAD_URL.format(stream_id=stream_id)
         )
 
         if json.loads(download_url.text).get("audioUrl"):
