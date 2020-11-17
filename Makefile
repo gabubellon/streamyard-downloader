@@ -1,6 +1,6 @@
 format:
-	black *.py
-	isort *.py
+	black .
+	isort .
 
 run:
 	python	streamyard_download.py

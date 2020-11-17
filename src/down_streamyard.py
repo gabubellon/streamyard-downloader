@@ -3,10 +3,10 @@ import os
 import re
 import sys
 import time
-import pandas as pd
 from concurrent import futures
 from concurrent.futures import ProcessPoolExecutor
 
+import pandas as pd
 import requests
 from loguru import logger
 
@@ -88,6 +88,9 @@ class StreamYardDownload:
             headers=dict(Referer=cfg.LOGIN_URL),
         )
 
+        # TOKEN SECUNDARIO POS DONWLOAD
+        self.LOGGED_TOKEN = self.request_session.cookies["csrfToken"]
+
     def list_past_broadcast(self):
         logger.info(
             f"Carregando Broadcast do dia {cfg.FILTER_DATE.strftime('%Y-%m-%d') }"
@@ -145,10 +148,11 @@ class StreamYardDownload:
 
         logger.info(f"Download stream id:{stream_id} name:{file_name}")
 
-        #ESSA CHAMADA NÃO FUNCIONA PELA API, APENAS ENTRANDO NO SITE E CLICANDO NO BOTÃO
+        # ESSA CHAMADA NÃO FUNCIONA PELA API, APENAS ENTRANDO NO SITE E CLICANDO NO BOTÃO
         get_url = self.request_session.post(
             cfg.CREATE_DOWNLOADS_URL.format(stream_id=stream_id),
-            data=dict(csrfToken=self.TOKEN)
+            data=dict(csrfToken=self.LOGGED_TOKEN),
+            headers=dict(Referer=cfg.BROAD_CAST_URL),
         )
 
         logger.info(f"{get_url.text}")
@@ -156,7 +160,7 @@ class StreamYardDownload:
         while True:
             logger.info(f"Gerando Links de download")
 
-            #COMO A CHAMADA NEM SEMPRE FUNCIONA ESSE REQUEST RETORNA ESSE
+            # COMO A CHAMADA NEM SEMPRE FUNCIONA ESSE REQUEST RETORNA ESSE
             make_urls = self.request_session.get(
                 cfg.CREATE_DOWNLOADS_URL.format(stream_id=stream_id)
             )
@@ -181,6 +185,8 @@ class StreamYardDownload:
         download_url = self.request_session.get(
             cfg.DOWNLOAD_URL.format(stream_id=stream_id)
         )
+
+        print(download_url)
 
         if json.loads(download_url.text).get("audioUrl"):
             logger.info(f"Download do audio")
