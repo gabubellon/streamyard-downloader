@@ -139,13 +139,15 @@ class StreamYardDownload:
         logger.info(f"Download stream id:{stream_id} name:{file_name}")
 
         _ = self.request_session.post(
-            cfg.CREATE_DOWNLOADS_URL.format(stream_id=stream_id)
+                cfg.CREATE_DOWNLOADS_URL.format(stream_id=stream_id)
             )
             
         time.sleep(60)
         while True:
             logger.info(f"Gerando Links de donwload")
 
+     
+        
             make_urls = self.request_session.get(
                 cfg.CREATE_DOWNLOADS_URL.format(stream_id=stream_id)
             )
