@@ -137,13 +137,14 @@ class StreamYardDownload:
         audio_filename = stream_info.get("audio_filename")
 
         logger.info(f"Download stream id:{stream_id} name:{file_name}")
-        
+
+        _ = self.request_session.post(
+            cfg.CREATE_DOWNLOADS_URL.format(stream_id=stream_id)
+            )
+            
+        time.sleep(60)
         while True:
             logger.info(f"Gerando Links de donwload")
-
-            _ = self.request_session.post(
-                cfg.CREATE_DOWNLOADS_URL.format(stream_id=stream_id)
-            )
 
             make_urls = self.request_session.get(
                 cfg.CREATE_DOWNLOADS_URL.format(stream_id=stream_id)
@@ -153,7 +154,7 @@ class StreamYardDownload:
 
             logger.info(f"Status: {status}")
 
-            if status != "creating":
+            if status and status != "creating":
                 break
 
             time.sleep(10)
