@@ -148,8 +148,7 @@ class StreamYardDownload:
         #ESSA CHAMADA NÃO FUNCIONA PELA API, APENAS ENTRANDO NO SITE E CLICANDO NO BOTÃO
         get_url = self.request_session.post(
             cfg.CREATE_DOWNLOADS_URL.format(stream_id=stream_id),
-            data=dict(csrfToken=self.TOKEN),
-            headers=dict(Referer="https://streamyard.com/broadcasts/past"),
+            data=dict(csrfToken=self.TOKEN)
         )
 
         logger.info(f"{get_url.text}")
