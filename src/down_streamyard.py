@@ -151,7 +151,7 @@ class StreamYardDownload:
         with ProcessPoolExecutor(max_workers=int(cfg.MAX_THREADS)) as executor:
             future_executor = {
                 executor.submit(self.download_broadcast, item): item.get("stream_id")
-                for item in broadcast_to_download[:1]
+                for item in broadcast_to_download
             }
 
         for future in futures.as_completed(future_executor):
