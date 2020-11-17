@@ -131,3 +131,5 @@ dmypy.json
 .env
 /files
 .vscode
+
+cache_session.pkl

@@ -1,5 +1,6 @@
 import json
 import os
+import pickle
 import re
 import sys
 import time
@@ -25,7 +26,7 @@ class StreamYardDownload:
         show_log = True
         previus_done = None
         with open(os.path.join(cfg.LOCAL_DOWNLOAD_PATH, file_name), "wb") as f:
-            print(
+            logger.info(
                 f"Downloading {file_name} para {os.path.join(cfg.LOCAL_DOWNLOAD_PATH,file_name)}"
             )
 
@@ -79,17 +80,35 @@ class StreamYardDownload:
     def login(self):
         logger.info("Acessando StreamYard")
 
-        self.get_cookie()
-        self.request_code()
+        if cfg.NEW_LOGIN:
+            logger.info("Novo Login")
+            self.get_cookie()
+            self.request_code()
 
-        self.request_session.post(
-            cfg.LOGIN_URL,
-            data=self.payload_login(self.TOKEN, self.read_email_code()),
-            headers=dict(Referer=cfg.LOGIN_URL),
-        )
+            self.request_session.post(
+                cfg.LOGIN_URL,
+                data=self.payload_login(self.TOKEN, self.read_email_code()),
+                headers=dict(Referer=cfg.LOGIN_URL),
+            )
+        elif os.path.exists("./cache_session.pkl"):
+            logger.info("Carregando Cache")
+            with open("./cache_session.pkl", "rb") as f:
+                self.request_session.cookies.update(pickle.load(f))
+        else:
+            logger.info("Login Necessário")
+            self.get_cookie()
+            self.request_code()
+
+            self.request_session.post(
+                cfg.LOGIN_URL,
+                data=self.payload_login(self.TOKEN, self.read_email_code()),
+                headers=dict(Referer=cfg.LOGIN_URL),
+            )
 
         # TOKEN SECUNDARIO POS DONWLOAD
         self.LOGGED_TOKEN = self.request_session.cookies["csrfToken"]
+        with open("./cache_session.pkl", "wb") as f:
+            pickle.dump(self.request_session.cookies, f)
 
     def list_past_broadcast(self):
         logger.info(
@@ -129,11 +148,10 @@ class StreamYardDownload:
         return broadcast_to_download
 
     def dowload(self, broadcast_to_download):
-
         with ProcessPoolExecutor(max_workers=int(cfg.MAX_THREADS)) as executor:
             future_executor = {
                 executor.submit(self.download_broadcast, item): item.get("stream_id")
-                for item in broadcast_to_download
+                for item in broadcast_to_download[:1]
             }
 
         for future in futures.as_completed(future_executor):
@@ -185,8 +203,6 @@ class StreamYardDownload:
         download_url = self.request_session.get(
             cfg.DOWNLOAD_URL.format(stream_id=stream_id)
         )
-
-        print(download_url)
 
         if json.loads(download_url.text).get("audioUrl"):
             logger.info(f"Download do audio")

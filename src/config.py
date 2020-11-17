@@ -10,6 +10,7 @@ DOWNLOAD_URL = "https://streamyard.com/api/broadcasts/{stream_id}/vod_download_u
 LIST_PAST_URL = "https://streamyard.com/api/broadcasts?limit=99&isComplete=true"
 BROAD_CAST_URL = "https://streamyard.com/api/broadcasts/"
 
+NEW_LOGIN = bool(config("NEW_LOGIN", cast=bool))
 EMAIL = config("EMAIL")
 LOCAL_DOWNLOAD_PATH = config("LOCAL_DOWNLOAD_PATH")
 CHUNK_SIZE = int(config("CHUNK_SIZE"))
