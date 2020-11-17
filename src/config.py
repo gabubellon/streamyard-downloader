@@ -10,6 +10,6 @@ LIST_PAST_URL = "https://streamyard.com/api/broadcasts?limit=99&isComplete=true"
 
 EMAIL = config("EMAIL")
 LOCAL_DOWNLOAD_PATH = config("LOCAL_DOWNLOAD_PATH")
-CHUNK_SIZE= int(config("CHUNK_SIZE"))
+CHUNK_SIZE = int(config("CHUNK_SIZE"))
 MAX_THREADS = config("MAX_THREADS")
-FILTER_DATE = datetime.strptime(config("FILTER_DATE"), '%Y-%m-%d').date()
+FILTER_DATE = datetime.strptime(config("FILTER_DATE"), "%Y-%m-%d").date()

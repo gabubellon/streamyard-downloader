@@ -89,15 +89,25 @@ class StreamYardDownload:
         )
 
     def list_past_broadcast(self):
-        logger.info(f"Carregando Broadcast do dia {cfg.FILTER_DATE.strftime('%Y-%m-%d') }")
+        logger.info(
+            f"Carregando Broadcast do dia {cfg.FILTER_DATE.strftime('%Y-%m-%d') }"
+        )
         last_broadcast = self.request_session.get(cfg.LIST_PAST_URL)
 
         stream_df = pd.DataFrame(json.loads(last_broadcast.text).get("broadcasts"))
-        columns = ['date','id','title',]
-        stream_df['date'] = pd.to_datetime(stream_df.startedAt).dt.tz_convert('America/Sao_Paulo').dt.date
+        columns = [
+            "date",
+            "id",
+            "title",
+        ]
+        stream_df["date"] = (
+            pd.to_datetime(stream_df.startedAt)
+            .dt.tz_convert("America/Sao_Paulo")
+            .dt.date
+        )
         stream_df = stream_df[columns]
 
-        return stream_df.query('date == @cfg.FILTER_DATE').to_dict(orient='records')
+        return stream_df.query("date == @cfg.FILTER_DATE").to_dict(orient="records")
 
     def create_download_list(self):
         broadcasts = self.list_past_broadcast()
@@ -115,14 +125,11 @@ class StreamYardDownload:
             )
         return broadcast_to_download
 
-    def dowload(self,broadcast_to_download):
+    def dowload(self, broadcast_to_download):
 
         with ProcessPoolExecutor(max_workers=int(cfg.MAX_THREADS)) as executor:
             future_executor = {
-                executor.submit(
-                    self.download_broadcast,
-                    item
-                ): item.get("stream_id")
+                executor.submit(self.download_broadcast, item): item.get("stream_id")
                 for item in broadcast_to_download
             }
 
@@ -139,22 +146,25 @@ class StreamYardDownload:
         logger.info(f"Download stream id:{stream_id} name:{file_name}")
 
         _ = self.request_session.post(
-                cfg.CREATE_DOWNLOADS_URL.format(stream_id=stream_id)
-            )
-            
+            cfg.CREATE_DOWNLOADS_URL.format(stream_id=stream_id)
+        )
+
         time.sleep(60)
         while True:
             logger.info(f"Gerando Links de donwload")
 
-     
-        
             make_urls = self.request_session.get(
                 cfg.CREATE_DOWNLOADS_URL.format(stream_id=stream_id)
             )
-            
+
             status = json.loads(make_urls.text).get("status")
 
             logger.info(f"Status: {status}")
+
+            if not status:
+                _ = self.request_session.post(
+                    cfg.CREATE_DOWNLOADS_URL.format(stream_id=stream_id)
+                )
 
             if status and status != "creating":
                 break
