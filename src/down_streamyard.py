@@ -146,10 +146,12 @@ class StreamYardDownload:
         logger.info(f"Download stream id:{stream_id} name:{file_name}")
 
         _ = self.request_session.post(
-            cfg.CREATE_DOWNLOADS_URL.format(stream_id=stream_id),data=dict(csrfToken=self.TOKEN)
+            cfg.CREATE_DOWNLOADS_URL.format(stream_id=stream_id),
+            data=dict(csrfToken=self.TOKEN),
+            headers=dict(Referer="https://streamyard.com/broadcasts/past"),
         )
-
-        time.sleep(60)
+        
+        time.sleep(15)
         while True:
             logger.info(f"Gerando Links de download")
 
@@ -163,7 +165,9 @@ class StreamYardDownload:
 
             if not status:
                 _ = self.request_session.post(
-                    cfg.CREATE_DOWNLOADS_URL.format(stream_id=stream_id),data=dict(csrfToken=self.TOKEN)
+                    cfg.CREATE_DOWNLOADS_URL.format(stream_id=stream_id),
+                    data=dict(csrfToken=self.TOKEN),
+                    headers=dict(Referer="https://streamyard.com/broadcasts/past"),
                 )
 
             if status and status != "creating":
