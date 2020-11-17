@@ -145,32 +145,36 @@ class StreamYardDownload:
 
         logger.info(f"Download stream id:{stream_id} name:{file_name}")
 
-        _ = self.request_session.post(
+        #ESSA CHAMADA NÃO FUNCIONA PELA API, APENAS ENTRANDO NO SITE E CLICANDO NO BOTÃO
+        get_url = self.request_session.post(
             cfg.CREATE_DOWNLOADS_URL.format(stream_id=stream_id),
             data=dict(csrfToken=self.TOKEN),
             headers=dict(Referer="https://streamyard.com/broadcasts/past"),
         )
-        
+
+        logger.info(f"{get_url.text}")
         time.sleep(15)
         while True:
             logger.info(f"Gerando Links de download")
 
+            #COMO A CHAMADA NEM SEMPRE FUNCIONA ESSE REQUEST RETORNA ESSE
             make_urls = self.request_session.get(
                 cfg.CREATE_DOWNLOADS_URL.format(stream_id=stream_id)
             )
 
+            logger.info(f"{make_urls.text}")
             status = json.loads(make_urls.text).get("status")
 
             logger.info(f"Status: {status}")
 
-            if not status:
-                _ = self.request_session.post(
-                    cfg.CREATE_DOWNLOADS_URL.format(stream_id=stream_id),
-                    data=dict(csrfToken=self.TOKEN),
-                    headers=dict(Referer="https://streamyard.com/broadcasts/past"),
-                )
+            # if not status:
+            #     _ = self.request_session.post(
+            #         cfg.CREATE_DOWNLOADS_URL.format(stream_id=stream_id),
+            #         data=dict(csrfToken=self.TOKEN),
+            #         headers=dict(Referer="https://streamyard.com/broadcasts/past"),
+            #     )
 
-            if status and status != "creating":
+            if status != "creating":
                 break
 
             time.sleep(10)
