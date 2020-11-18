@@ -7,6 +7,7 @@ import time
 from concurrent import futures
 from concurrent.futures import ProcessPoolExecutor
 
+import boto3
 import pandas as pd
 import requests
 from loguru import logger
@@ -49,6 +50,9 @@ class StreamYardDownload:
                         logger.info(f"Donwload do arquivo {file_name} em {done}%")
                         show_log = False
                         previus_done = done
+
+        if cfg.AUTO_UPLOAD:
+            self.send_to_s3(os.path.join(cfg.LOCAL_DOWNLOAD_PATH, file_name))
 
     def get_cookie(self):
         logger.info("Carregando Cookie")
@@ -174,7 +178,7 @@ class StreamYardDownload:
         )
 
         logger.info(f"{get_url.text}")
-        time.sleep(15)
+
         while True:
             logger.info(f"Gerando Links de download")
 
@@ -223,6 +227,16 @@ class StreamYardDownload:
     def start_download(self):
         self.login()
         self.dowload(self.create_download_list())
+
+    def send_to_s3(self, sent_file):
+        key = "{}/{}".format(cfg.S3_PREFIX, os.path.basename(sent_file))
+        logger.info(f"Sending {sent_file} to bucket:{cfg.S3_BUCKET} path:{key}")
+
+        resource = boto3.resource("s3")
+        with open(sent_file, "rb") as file:
+            _ = resource.Object(cfg.S3_BUCKET, key).put(
+                Body=file, ACL="bucket-owner-full-control"
+            )
 
 
 if __name__ == "__main__":

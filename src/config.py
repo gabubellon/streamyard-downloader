@@ -11,6 +11,9 @@ LIST_PAST_URL = "https://streamyard.com/api/broadcasts?limit=99&isComplete=true"
 BROAD_CAST_URL = "https://streamyard.com/api/broadcasts/"
 
 NEW_LOGIN = bool(config("NEW_LOGIN", cast=bool))
+AUTO_UPLOAD = bool(config("AUTO_UPLOAD", cast=bool))
+S3_PREFIX = config("S3_PREFIX")
+S3_BUCKET = config("S3_BUCKET")
 EMAIL = config("EMAIL")
 LOCAL_DOWNLOAD_PATH = config("LOCAL_DOWNLOAD_PATH")
 CHUNK_SIZE = int(config("CHUNK_SIZE"))
