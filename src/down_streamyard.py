@@ -231,7 +231,7 @@ class StreamYardDownload:
 
     def send_to_s3(self, sent_file):
         key = "{}/{}".format(cfg.S3_PREFIX, os.path.basename(sent_file))
-        logger.info(f"Sending {sent_file} to bucket:{cfg.S3_BUCKET} path:{key}")
+        logger.info(f"Sending {sent_file} to bucket s3://{cfg.S3_BUCKET}/{key}")
 
         resource = boto3.resource("s3")
         with open(sent_file, "rb") as file:
