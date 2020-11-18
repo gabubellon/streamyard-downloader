@@ -133,7 +133,7 @@ class StreamYardDownload:
         )
         stream_df = stream_df[columns]
 
-        return stream_df.query("date >= @cfg.FILTER_DATE").to_dict(orient="records")
+        return stream_df.query("date == @cfg.FILTER_DATE").to_dict(orient="records")
 
     def create_download_list(self):
         broadcasts = self.list_past_broadcast()
