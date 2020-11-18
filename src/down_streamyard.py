@@ -53,7 +53,6 @@ class StreamYardDownload:
 
         if cfg.AUTO_UPLOAD:
             self.send_to_s3(os.path.join(cfg.LOCAL_DOWNLOAD_PATH, file_name))
-            
 
     def get_cookie(self):
         logger.info("Carregando Cookie")
@@ -233,13 +232,17 @@ class StreamYardDownload:
         key = "{}/{}".format(cfg.S3_PREFIX, os.path.basename(sent_file))
         logger.info(f"Sending {sent_file} to bucket s3://{cfg.S3_BUCKET}/{key}")
 
-        resource = boto3.resource("s3")
-        with open(sent_file, "rb") as file:
-            _ = resource.Object(cfg.S3_BUCKET, key).put(
-                Body=file, ACL="bucket-owner-full-control"
-            )
+        s3_client = boto3.client("s3")
+        s3_client.upload_file(sent_file, cfg.S3_BUCKET, key)
+
+        # resource = boto3.resource("s3")
+        # with open(sent_file, "rb") as file:
+        #     _ = resource.Object(cfg.S3_BUCKET, key).put(
+        #         Body=file, ACL="bucket-owner-full-control"
+        #     )
 
         os.remove(sent_file)
+
 
 if __name__ == "__main__":
     streamyardown = StreamYardDownload()
