@@ -26,6 +26,7 @@ class StreamYardDownload:
     def download_file(self, file_name, request_url):
         show_log = True
         previus_done = None
+        os.makedirs(cfg.LOCAL_DOWNLOAD_PATH, exist_ok=True)
         with open(os.path.join(cfg.LOCAL_DOWNLOAD_PATH, file_name), "wb") as f:
             logger.info(
                 f"Downloading {file_name} para {os.path.join(cfg.LOCAL_DOWNLOAD_PATH,file_name)}"
@@ -192,13 +193,6 @@ class StreamYardDownload:
 
             logger.info(f"Status: {status}")
 
-            # if not status:
-            #     _ = self.request_session.post(
-            #         cfg.CREATE_DOWNLOADS_URL.format(stream_id=stream_id),
-            #         data=dict(csrfToken=self.TOKEN),
-            #         headers=dict(Referer="https://streamyard.com/broadcasts/past"),
-            #     )
-
             if status != "creating":
                 break
 
@@ -234,12 +228,6 @@ class StreamYardDownload:
 
         s3_client = boto3.client("s3")
         s3_client.upload_file(sent_file, cfg.S3_BUCKET, key)
-
-        # resource = boto3.resource("s3")
-        # with open(sent_file, "rb") as file:
-        #     _ = resource.Object(cfg.S3_BUCKET, key).put(
-        #         Body=file, ACL="bucket-owner-full-control"
-        #     )
 
         os.remove(sent_file)
 

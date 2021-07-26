@@ -2,5 +2,8 @@ format:
 	black .
 	isort .
 
+install:
+	pip install -r requirements.txt
+
 run:
-	python	streamyard_download.py
+	python src/down_streamyard.py
