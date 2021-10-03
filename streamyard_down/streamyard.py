@@ -11,12 +11,13 @@ import pandas as pd
 import requests
 from loguru import logger
 
-import config as cfg
+import streamyard_down.config as cfg
 
 
 class StreamYardDownload:
     def __init__(
         self,
+        email,
         path,
         start_date,
         end_date,
@@ -25,7 +26,8 @@ class StreamYardDownload:
         chuck_size=1024,
         upload=False,
     ):
-        self.local_download_path = path
+        self.email = email
+        self.path = path
         self.threads = threads
         self.chuck_size = chuck_size
         self.new_login = new_login
@@ -41,10 +43,10 @@ class StreamYardDownload:
     def download_file(self, file_name, request_url):
         show_log = True
         previus_done = None
-        os.makedirs(self.local_download_path, exist_ok=True)
-        with open(os.path.join(self.local_download_path, file_name), "wb") as f:
+        os.makedirs(self.path, exist_ok=True)
+        with open(os.path.join(self.path, file_name), "wb") as f:
             logger.info(
-                f"Downloading {file_name} para {os.path.join(self.local_download_path,file_name)}"
+                f"Downloading {file_name} para {os.path.join(self.path,file_name)}"
             )
 
             response = self.request_session.get(request_url, stream=True)
@@ -68,7 +70,7 @@ class StreamYardDownload:
                         previus_done = done
 
         if self.upload:
-            self.send_to_s3(os.path.join(self.local_download_path, file_name))
+            self.send_to_s3(os.path.join(self.path, file_name))
 
     def get_cookie(self):
         logger.info("Carregando Cookie")
@@ -77,7 +79,7 @@ class StreamYardDownload:
 
     @staticmethod
     def payload_token(token):
-        return dict(email=cfg.EMAIL, csrfToken=token)
+        return dict(email=self.email, csrfToken=token)
 
     def request_code(self):
         logger.info("Requisitando Código")
@@ -91,11 +93,11 @@ class StreamYardDownload:
     @staticmethod
     def read_email_code():
         logger.info("Carregando Cookie")
-        return input(f"Insira o código de login enviado para {cfg.EMAIL}:")
+        return input(f"Insira o código de login enviado para {self.email}:")
 
     @staticmethod
     def payload_login(token, email_code):
-        return dict(email=cfg.EMAIL, csrfToken=token, otpToken=email_code)
+        return dict(email=self.email, csrfToken=token, otpToken=email_code)
 
     def login(self):
         logger.info("Acessando StreamYard")

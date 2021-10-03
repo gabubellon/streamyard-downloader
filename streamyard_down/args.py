@@ -2,16 +2,22 @@ import argparse
 import calendar
 from datetime import date, datetime
 
-from streamyard_downloader import StreamYardDownload
+parser = argparse.ArgumentParser(description="Downlods from StreamYard")
 
-parser = argparse.ArgumentParser(description="Donwload from StreamYard")
+parser.add_argument(
+    "--email",
+    type=str,
+    help="registred email on streamyard",
+    dest="email",
+    required=True,
+)
 
 parser.add_argument(
     "-p",
     "--path",
     type=str,
     default="./files",
-    help="Path local do save downaloads",
+    help="local path to save downloads",
     dest="path",
 )
 
@@ -19,7 +25,7 @@ parser.add_argument(
     "-s",
     "--start_date",
     type=date,
-    help="Start Date to filter Videos",
+    help="start date to filter data on streamyard",
     default=date(datetime.now().year, datetime.now().month, 1),
     dest="start_date",
 )
@@ -28,7 +34,7 @@ parser.add_argument(
     "-e",
     "--end_date",
     type=date,
-    help="End Date to filter Videos",
+    help="end date to filter data on streamyard",
     default=date(
         datetime.now().year,
         datetime.now().month,
@@ -44,16 +50,8 @@ parser.add_argument(
     "-nl",
     "--new_login",
     action="store_true",
-    help="Force a new login and ignore cache",
+    help="Force a new login and ignore cookie cache",
     dest="new_login",
-)
-
-parser.add_argument(
-    "-u",
-    "--upload",
-    action="store_true",
-    help="limit data to result",
-    dest="upload",
 )
 
 parser.add_argument(
@@ -74,7 +72,16 @@ parser.add_argument(
     dest="threads",
 )
 
-if __name__ == "__main__":
-    args = parser.parse_args()
-    streamyardown = StreamYardDownload(**vars(args))
-    streamyardown.start_download()
+parser.add_argument(
+    "-s3",
+    "--upload_s3",
+    action="store_true",
+    help="limit data to result",
+    dest="upload",
+)
+
+args = parser.parse_args()
+
+
+def get_args_dict():
+    return vars(args)
