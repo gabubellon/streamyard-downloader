@@ -133,3 +133,5 @@ dmypy.json
 .vscode
 
 cache_session.pkl
+
+.DS_Store

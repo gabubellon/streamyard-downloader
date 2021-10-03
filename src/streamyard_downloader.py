@@ -2,7 +2,6 @@ import json
 import os
 import pickle
 import re
-import sys
 import time
 from concurrent import futures
 from concurrent.futures import ProcessPoolExecutor
@@ -16,7 +15,23 @@ import config as cfg
 
 
 class StreamYardDownload:
-    def __init__(self):
+    def __init__(
+        self,
+        path,
+        start_date,
+        end_date,
+        new_login=False,
+        threads=1,
+        chuck_size=1024,
+        upload=False,
+    ):
+        self.local_download_path = path
+        self.threads = threads
+        self.chuck_size = chuck_size
+        self.new_login = new_login
+        self.upload = upload
+        self.start_date = start_date
+        self.end_date = end_date
         self.request_session = self.create_session()
 
     def create_session(self):
@@ -26,10 +41,10 @@ class StreamYardDownload:
     def download_file(self, file_name, request_url):
         show_log = True
         previus_done = None
-        os.makedirs(cfg.LOCAL_DOWNLOAD_PATH, exist_ok=True)
-        with open(os.path.join(cfg.LOCAL_DOWNLOAD_PATH, file_name), "wb") as f:
+        os.makedirs(self.local_download_path, exist_ok=True)
+        with open(os.path.join(self.local_download_path, file_name), "wb") as f:
             logger.info(
-                f"Downloading {file_name} para {os.path.join(cfg.LOCAL_DOWNLOAD_PATH,file_name)}"
+                f"Downloading {file_name} para {os.path.join(self.local_download_path,file_name)}"
             )
 
             response = self.request_session.get(request_url, stream=True)
@@ -40,7 +55,7 @@ class StreamYardDownload:
             else:
                 dl = 0
                 total_length = int(total_length)
-                for data in response.iter_content(chunk_size=cfg.CHUNK_SIZE):
+                for data in response.iter_content(chunk_size=self.chuck_size):
                     dl += len(data)
                     f.write(data)
                     done = int(100 * dl / total_length)
@@ -52,8 +67,8 @@ class StreamYardDownload:
                         show_log = False
                         previus_done = done
 
-        if cfg.AUTO_UPLOAD:
-            self.send_to_s3(os.path.join(cfg.LOCAL_DOWNLOAD_PATH, file_name))
+        if self.upload:
+            self.send_to_s3(os.path.join(self.local_download_path, file_name))
 
     def get_cookie(self):
         logger.info("Carregando Cookie")
@@ -85,7 +100,7 @@ class StreamYardDownload:
     def login(self):
         logger.info("Acessando StreamYard")
 
-        if cfg.NEW_LOGIN:
+        if self.new_login:
             logger.info("Novo Login")
             self.get_cookie()
             self.request_code()
@@ -117,7 +132,7 @@ class StreamYardDownload:
 
     def list_past_broadcast(self):
         logger.info(
-            f"Carregando Broadcast do dia {cfg.FILTER_DATE.strftime('%Y-%m-%d') }"
+            f"Carregando Broadcast entre os dias {self.start_date.strftime('%Y-%m-%d') } e {self.end_date.strftime('%Y-%m-%d') }"
         )
         last_broadcast = self.request_session.get(cfg.LIST_PAST_URL)
 
@@ -134,7 +149,9 @@ class StreamYardDownload:
         )
         stream_df = stream_df[columns]
 
-        return stream_df.query("date == @cfg.FILTER_DATE").to_dict(orient="records")
+        return stream_df.query(
+            "date >= @self.start_date and date <= @self.end_date"
+        ).to_dict(orient="records")
 
     def create_download_list(self):
         broadcasts = self.list_past_broadcast()
@@ -153,7 +170,7 @@ class StreamYardDownload:
         return broadcast_to_download
 
     def dowload(self, broadcast_to_download):
-        with ProcessPoolExecutor(max_workers=int(cfg.MAX_THREADS)) as executor:
+        with ProcessPoolExecutor(max_workers=int(self.threads)) as executor:
             future_executor = {
                 executor.submit(self.download_broadcast, item): item.get("stream_id")
                 for item in broadcast_to_download
@@ -230,8 +247,3 @@ class StreamYardDownload:
         s3_client.upload_file(sent_file, cfg.S3_BUCKET, key)
 
         os.remove(sent_file)
-
-
-if __name__ == "__main__":
-    streamyardown = StreamYardDownload()
-    streamyardown.start_download()
