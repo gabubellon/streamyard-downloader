@@ -1,9 +1,6 @@
 format:
-	black .
-	isort .
+	black streamyard_down/*
+	isort streamyard_down/*
 
 install:
 	pip install -r requirements.txt
-
-run:
-	python src/down_streamyard.py

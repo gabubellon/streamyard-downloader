@@ -164,6 +164,7 @@ class StreamYardDownload:
             broadcast_to_download.append(
                 dict(
                     stream_id=broadcast.get("id"),
+                    stream_date=broadcast.get("date"),
                     file_name=file_name,
                     audio_filename=f"{file_name}.mp3",
                     video_filename=f"{file_name}.mp4",
@@ -239,7 +240,38 @@ class StreamYardDownload:
 
     def start_download(self):
         self.login()
-        self.dowload(self.create_download_list())
+        download_list = self.create_download_list()
+        options = ""
+        for index, item in enumerate(download_list):
+            options += f"** ID:{index} - STREAM:{item.get('file_name')} - DATE:{item.get('stream_date')}\n"
+
+        message = f"""
+        ############################
+        LISTANDO STREAMS ENTRE OS DIAS {self.start_date.strftime('%Y-%m-%d') } e {self.end_date.strftime('%Y-%m-%d') }
+        ESCOLHA QUAIS ARQUIVOS DESEJA REALIZAR O DOWNLOAD INFORMANDO O IDs SEPARADOS POR VIRGULA(,)
+        EXEMPLOS:
+            0,1,2,3 Para baixar os IDs 0,1,2,3
+            1 - Para baixar apenas o ID 1
+        IDs para donwload: 
+
+        ##### LISTA DE STREAMS #####:
+        {options}
+
+        Selecione os IDs: 
+        """
+        ids = input(message)
+
+        to_download=[]
+        escolhas=""
+        for id in  ids.split(','):
+
+            data = download_list[int(id)]
+            escolhas += f"** ID:{id} - STREAM:{data.get('file_name')} - DATE:{data.get('stream_date')}\n"
+            to_download.append(data)
+
+        print(f"OS SEGUINTES IDs serão baixados {ids}\n{escolhas}")
+
+        self.dowload(to_download)
 
     def send_to_s3(self, sent_file):
         key = "{}/{}".format(cfg.S3_PREFIX, os.path.basename(sent_file))
