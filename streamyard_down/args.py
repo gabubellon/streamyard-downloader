@@ -2,12 +2,12 @@ import argparse
 import calendar
 from datetime import date, datetime
 
-parser = argparse.ArgumentParser(description="Downlods from StreamYard")
+parser = argparse.ArgumentParser(description="Download finished streamns from StreamYard")
 
 parser.add_argument(
     "--email",
     type=str,
-    help="registred email on streamyard",
+    help="registred email on streamyard ",
     dest="email",
     required=True,
 )
@@ -17,7 +17,7 @@ parser.add_argument(
     "--path",
     type=str,
     default="./files",
-    help="local path to save downloads",
+    help="local path to save downloads (default: ./files)",
     dest="path",
 )
 
@@ -25,7 +25,7 @@ parser.add_argument(
     "-s",
     "--start_date",
     type=date,
-    help="start date to filter data on streamyard",
+    help="start date to filter data on streamyard (default: first day of current month)",
     default=date(datetime.now().year, datetime.now().month, 1),
     dest="start_date",
 )
@@ -34,7 +34,7 @@ parser.add_argument(
     "-e",
     "--end_date",
     type=date,
-    help="end date to filter data on streamyard",
+    help="end date to filter data on streamyard (default: last day of current month)",
     default=date(
         datetime.now().year,
         datetime.now().month,
@@ -50,7 +50,7 @@ parser.add_argument(
     "-nl",
     "--new_login",
     action="store_true",
-    help="Force a new login and ignore cookie cache",
+    help="Force a new login and ignore cookie cache (default: False)",
     dest="new_login",
 )
 
@@ -59,7 +59,7 @@ parser.add_argument(
     "--chuck_size",
     type=int,
     default=1024,
-    help="Size of chunks do Donwload files",
+    help="size in MB of chunks to downloa files (default: 1024)",
     dest="chuck_size",
 )
 
@@ -68,7 +68,7 @@ parser.add_argument(
     "--threads",
     type=int,
     default=1,
-    help="Number of threads to run simultaneos",
+    help="number of threads to run simultaneos (default: 1)",
     dest="threads",
 )
 
@@ -76,7 +76,7 @@ parser.add_argument(
     "-s3",
     "--upload_s3",
     action="store_true",
-    help="limit data to result",
+    help="automatic upload files to a s3 bucket (defaul: False)",
     dest="upload",
 )
 
