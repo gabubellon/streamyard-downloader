@@ -4,17 +4,17 @@ Download Finished Broadcast from StreamYard
  # Install
 
 ```shell
-pip install -r requirements.txt
+pip install git+https://github.com/gabubellon/streamyard-downloader
 ```
 # Usage
 
-Call python module with `python -m streamyard_down --email some@email.com`, `--email` has the unique necessary parameter.
+Call python script with `streamyard-downloader --email some@email.com`, `--email` has the unique necessary parameter.
 
 When see this messsage on terminal `Insira o código de login enviado para <EMAIL>:` insert the login code received on your email.
 
 After this all past broadcast (.mp3 and . mp4) will be download to `PATH` (./file by default)
 
-Run `python -m streamyard_down  -h` show all parameters can be used:
+Run `streamyard-downloader  -h` show all parameters can be used:
 
 ```shell
 $ Download finished streamns from StreamYard
