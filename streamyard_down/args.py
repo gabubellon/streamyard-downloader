@@ -13,6 +13,14 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "-lc",
+    "--list_choise",
+    action="store_true",
+    help="Show a list of streamns to dowload",
+    dest="list_choise",
+)
+
+parser.add_argument(
     "-p",
     "--path",
     type=str,
