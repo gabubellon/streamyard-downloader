@@ -3,4 +3,11 @@ format:
 	isort streamyard_down/*
 
 install:
-	pip install -r requirements.txt
+	pip install -e .
+
+clean:
+	rm -rf build
+	rm -rf dist
+
+dist: clean
+	python setup.py sdist bdist_wheel
