@@ -25,6 +25,7 @@ class StreamYardDownload:
         threads=1,
         chuck_size=1024,
         upload=False,
+        list_choise=False,
     ):
         self.email = email
         self.path = path
@@ -35,6 +36,7 @@ class StreamYardDownload:
         self.start_date = start_date
         self.end_date = end_date
         self.request_session = self.create_session()
+        self.list_choise = list_choise
 
     def create_session(self):
         logger.info("Criando Sessão")
@@ -245,32 +247,35 @@ class StreamYardDownload:
         for index, item in enumerate(download_list):
             options += f"** ID:{index} - STREAM:{item.get('file_name')} - DATE:{item.get('stream_date')}\n"
 
-        message = f"""
-        ############################
-        LISTANDO STREAMS ENTRE OS DIAS {self.start_date.strftime('%Y-%m-%d') } e {self.end_date.strftime('%Y-%m-%d') }
-        ESCOLHA QUAIS ARQUIVOS DESEJA REALIZAR O DOWNLOAD INFORMANDO O IDs SEPARADOS POR VIRGULA(,)
-        EXEMPLOS:
-            0,1,2,3 Para baixar os IDs 0,1,2,3
-            1 - Para baixar apenas o ID 1
-        IDs para donwload: 
-
-        ##### LISTA DE STREAMS #####:
-        {options}
-
-        Selecione os IDs: 
-        """
-        ids = input(message)
-
         to_download=[]
-        escolhas=""
-        for id in  ids.split(','):
+        if self.list_choise:
+            message = f"""
+            ############################
+            LISTANDO STREAMS ENTRE OS DIAS {self.start_date.strftime('%Y-%m-%d') } e {self.end_date.strftime('%Y-%m-%d') }
+            ESCOLHA QUAIS ARQUIVOS DESEJA REALIZAR O DOWNLOAD INFORMANDO O IDs SEPARADOS POR VIRGULA(,)
+            EXEMPLOS:
+                0,1,2,3 Para baixar os IDs 0,1,2,3
+                1 - Para baixar apenas o ID 1
+            IDs para donwload: 
 
-            data = download_list[int(id)]
-            escolhas += f"** ID:{id} - STREAM:{data.get('file_name')} - DATE:{data.get('stream_date')}\n"
-            to_download.append(data)
+            ##### LISTA DE STREAMS #####:
+            {options}
 
-        print(f"OS SEGUINTES IDs serão baixados {ids}\n{escolhas}")
+            Selecione os IDs: 
+            """
+            ids = input(message)
 
+            to_download=[]
+            escolhas=""
+            for id in ids.split(','):
+
+                data = download_list[int(id)]
+                escolhas += f"** ID:{id} - STREAM:{data.get('file_name')} - DATE:{data.get('stream_date')}\n"
+                to_download.append(data)
+            print(f"OS SEGUINTES IDs serão baixados {ids}\n{escolhas}")
+        else:
+            to_download = download_list
+            
         self.dowload(to_download)
 
     def send_to_s3(self, sent_file):
