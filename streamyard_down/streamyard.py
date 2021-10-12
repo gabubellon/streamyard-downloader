@@ -6,7 +6,6 @@ import time
 from concurrent import futures
 from concurrent.futures import ProcessPoolExecutor
 
-import boto3
 import pandas as pd
 import requests
 from loguru import logger
@@ -37,6 +36,7 @@ class StreamYardDownload:
         self.end_date = end_date
         self.request_session = self.create_session()
         self.list_choise = list_choise
+        self.quit = False
 
     def create_session(self):
         logger.info("Criando Sessão")
@@ -71,8 +71,9 @@ class StreamYardDownload:
                         show_log = False
                         previus_done = done
 
+        # TODO implement upload
         if self.upload:
-            self.send_to_s3(os.path.join(self.path, file_name))
+            pass
 
     def get_cookie(self):
         logger.info("Carregando Cookie")
@@ -186,59 +187,61 @@ class StreamYardDownload:
             logger.info(f"Download da stream {file_name} completo ")
 
     def download_broadcast(self, stream_info):
-        stream_id = stream_info.get("stream_id")
-        file_name = stream_info.get("file_name")
-        video_filename = stream_info.get("video_filename")
-        audio_filename = stream_info.get("audio_filename")
+        while not self.quit:
+            stream_id = stream_info.get("stream_id")
+            file_name = stream_info.get("file_name")
+            video_filename = stream_info.get("video_filename")
+            audio_filename = stream_info.get("audio_filename")
 
-        logger.info(f"Download stream id:{stream_id} name:{file_name}")
+            logger.info(f"Download stream id:{stream_id} name:{file_name}")
 
-        # ESSA CHAMADA NÃO FUNCIONA PELA API, APENAS ENTRANDO NO SITE E CLICANDO NO BOTÃO
-        get_url = self.request_session.post(
-            cfg.CREATE_DOWNLOADS_URL.format(stream_id=stream_id),
-            data=dict(csrfToken=self.LOGGED_TOKEN),
-            headers=dict(Referer=cfg.BROAD_CAST_URL),
-        )
-
-        logger.info(f"{get_url.text}")
-
-        while True:
-            logger.info(f"Gerando Links de download")
-
-            # COMO A CHAMADA NEM SEMPRE FUNCIONA ESSE REQUEST RETORNA ESSE
-            make_urls = self.request_session.get(
-                cfg.CREATE_DOWNLOADS_URL.format(stream_id=stream_id)
+            # ESSA CHAMADA NÃO FUNCIONA PELA API, APENAS ENTRANDO NO SITE E CLICANDO NO BOTÃO
+            get_url = self.request_session.post(
+                cfg.CREATE_DOWNLOADS_URL.format(stream_id=stream_id),
+                data=dict(csrfToken=self.LOGGED_TOKEN),
+                headers=dict(Referer=cfg.BROAD_CAST_URL),
             )
 
-            logger.info(f"{make_urls.text}")
-            status = json.loads(make_urls.text).get("status")
+            logger.info(f"{get_url.text}")
 
-            logger.info(f"Status: {status}")
+            while True:
+                logger.info(f"Gerando Links de download")
 
-            if status != "creating":
-                break
+                # COMO A CHAMADA NEM SEMPRE FUNCIONA ESSE REQUEST RETORNA ESSE
+                make_urls = self.request_session.get(
+                    cfg.CREATE_DOWNLOADS_URL.format(stream_id=stream_id)
+                )
 
-            time.sleep(10)
+                logger.info(f"{make_urls.text}")
+                status = json.loads(make_urls.text).get("status")
 
-        download_url = self.request_session.get(
-            cfg.DOWNLOAD_URL.format(stream_id=stream_id)
-        )
+                logger.info(f"Status: {status}")
 
-        if json.loads(download_url.text).get("audioUrl"):
-            logger.info(f"Download do audio")
-            self.download_file(
-                file_name=audio_filename,
-                request_url=json.loads(download_url.text).get("audioUrl"),
+                if status != "creating":
+                    break
+
+                time.sleep(10)
+
+            download_url = self.request_session.get(
+                cfg.DOWNLOAD_URL.format(stream_id=stream_id)
             )
 
-        if json.loads(download_url.text).get("videoUrl"):
-            logger.info(f"Download do video")
-            self.download_file(
-                file_name=video_filename,
-                request_url=json.loads(download_url.text).get("videoUrl"),
-            )
+            if json.loads(download_url.text).get("audioUrl"):
+                logger.info(f"Download do audio")
+                self.download_file(
+                    file_name=audio_filename,
+                    request_url=json.loads(download_url.text).get("audioUrl"),
+                )
 
-        return file_name
+            if json.loads(download_url.text).get("videoUrl"):
+                logger.info(f"Download do video")
+                self.download_file(
+                    file_name=video_filename,
+                    request_url=json.loads(download_url.text).get("videoUrl"),
+                )
+
+            return file_name
+        return
 
     def start_download(self):
         self.login()
@@ -247,7 +250,7 @@ class StreamYardDownload:
         for index, item in enumerate(download_list):
             options += f"** ID:{index} - STREAM:{item.get('file_name')} - DATE:{item.get('stream_date')}\n"
 
-        to_download=[]
+        to_download = []
         if self.list_choise:
             message = f"""
             ############################
@@ -265,9 +268,9 @@ class StreamYardDownload:
             """
             ids = input(message)
 
-            to_download=[]
-            escolhas=""
-            for id in ids.split(','):
+            to_download = []
+            escolhas = ""
+            for id in ids.split(","):
 
                 data = download_list[int(id)]
                 escolhas += f"** ID:{id} - STREAM:{data.get('file_name')} - DATE:{data.get('stream_date')}\n"
@@ -275,14 +278,8 @@ class StreamYardDownload:
             print(f"OS SEGUINTES IDs serão baixados {ids}\n{escolhas}")
         else:
             to_download = download_list
-            
-        self.dowload(to_download)
 
-    def send_to_s3(self, sent_file):
-        key = "{}/{}".format(cfg.S3_PREFIX, os.path.basename(sent_file))
-        logger.info(f"Sending {sent_file} to bucket s3://{cfg.S3_BUCKET}/{key}")
-
-        s3_client = boto3.client("s3")
-        s3_client.upload_file(sent_file, cfg.S3_BUCKET, key)
-
-        os.remove(sent_file)
+        try:
+            self.dowload(to_download)
+        except KeyboardInterrupt:
+            self.quit = True
