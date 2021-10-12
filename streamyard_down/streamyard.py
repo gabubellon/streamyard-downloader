@@ -5,6 +5,7 @@ import re
 import time
 from concurrent import futures
 from concurrent.futures import ProcessPoolExecutor
+from datetime import datetime
 
 import pandas as pd
 import requests
@@ -32,8 +33,8 @@ class StreamYardDownload:
         self.chuck_size = chuck_size
         self.new_login = new_login
         self.upload = upload
-        self.start_date = start_date
-        self.end_date = end_date
+        self.start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+        self.end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
         self.request_session = self.create_session()
         self.list_choise = list_choise
         self.quit = False
