@@ -2,9 +2,14 @@ import argparse
 import calendar
 from datetime import date, datetime
 
-parser = argparse.ArgumentParser(description="Download finished streamns from StreamYard")
+parser = argparse.ArgumentParser(
+    description="Download finished streamns from StreamYard"
+)
 
-parser.add_argument(
+streamyard_group = parser.add_argument_group("streamyard")
+s3_group = parser.add_argument_group("s3")
+
+streamyard_group.add_argument(
     "--email",
     type=str,
     help="registred email on streamyard ",
@@ -12,7 +17,7 @@ parser.add_argument(
     required=True,
 )
 
-parser.add_argument(
+streamyard_group.add_argument(
     "-lc",
     "--list_choise",
     action="store_true",
@@ -20,7 +25,7 @@ parser.add_argument(
     dest="list_choise",
 )
 
-parser.add_argument(
+streamyard_group.add_argument(
     "-p",
     "--path",
     type=str,
@@ -29,7 +34,7 @@ parser.add_argument(
     dest="path",
 )
 
-parser.add_argument(
+streamyard_group.add_argument(
     "-s",
     "--start_date",
     type=date,
@@ -38,7 +43,7 @@ parser.add_argument(
     dest="start_date",
 )
 
-parser.add_argument(
+streamyard_group.add_argument(
     "-e",
     "--end_date",
     type=date,
@@ -54,7 +59,7 @@ parser.add_argument(
     dest="end_date",
 )
 
-parser.add_argument(
+streamyard_group.add_argument(
     "-nl",
     "--new_login",
     action="store_true",
@@ -62,7 +67,7 @@ parser.add_argument(
     dest="new_login",
 )
 
-parser.add_argument(
+streamyard_group.add_argument(
     "-c",
     "--chuck_size",
     type=int,
@@ -71,7 +76,7 @@ parser.add_argument(
     dest="chuck_size",
 )
 
-parser.add_argument(
+streamyard_group.add_argument(
     "-t",
     "--threads",
     type=int,
@@ -80,7 +85,7 @@ parser.add_argument(
     dest="threads",
 )
 
-parser.add_argument(
+s3_group.add_argument(
     "-s3",
     "--upload_s3",
     action="store_true",
@@ -88,8 +93,39 @@ parser.add_argument(
     dest="upload",
 )
 
+s3_group.add_argument(
+    "--bucket",
+    type=str,
+    help="s3 bucket to save files on formart s3://bucket-name",
+    dest="bucket",
+)
+
+s3_group.add_argument(
+    "--prefix",
+    type=str,
+    help="s3 prefix to save file on bucket",
+    dest="prefix",
+)
+
 args = parser.parse_args()
 
 
 def get_args_dict():
-    return vars(args)
+
+    streamyard_keys = [
+        "email",
+        "list_choise",
+        "path",
+        "start_date",
+        "end_date",
+        "new_login",
+        "chuck_size",
+        "threads",
+        "upload",
+    ]
+
+    streamyard_args = {}
+    for arg in streamyard_keys:
+        streamyard_args[arg] = vars(args)[arg]
+
+    return streamyard_args
