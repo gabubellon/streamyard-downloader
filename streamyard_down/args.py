@@ -37,16 +37,16 @@ streamyard_group.add_argument(
 streamyard_group.add_argument(
     "-s",
     "--start_date",
-    type=date,
+    type=str,
     help="start date to filter data on streamyard (default: first day of current month)",
-    default=date(datetime.now().year, datetime.now().month, 1),
+    default=date(datetime.now().year, datetime.now().month, 1).strftime("%Y-%m-%d"),
     dest="start_date",
 )
 
 streamyard_group.add_argument(
     "-e",
     "--end_date",
-    type=date,
+    type=str,
     help="end date to filter data on streamyard (default: last day of current month)",
     default=date(
         datetime.now().year,
@@ -55,7 +55,7 @@ streamyard_group.add_argument(
             datetime.now().year,
             datetime.now().month,
         )[1],
-    ),
+    ).strftime("%Y-%m-%d"),
     dest="end_date",
 )
 
