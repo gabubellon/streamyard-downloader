@@ -87,7 +87,7 @@ streamyard_group.add_argument(
 
 s3_group.add_argument(
     "-s3",
-    "--upload_s3",
+    "--upload",
     action="store_true",
     help="automatic upload files to a s3 bucket (defaul: False)",
     dest="upload",
@@ -122,6 +122,8 @@ def get_args_dict():
         "chuck_size",
         "threads",
         "upload",
+        "bucket",
+        "prefix"
     ]
 
     streamyard_args = {}
