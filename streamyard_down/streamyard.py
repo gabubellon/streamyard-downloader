@@ -145,6 +145,7 @@ class StreamYardDownload:
         stream_df = pd.DataFrame(json.loads(last_broadcast.text).get("broadcasts"))
         columns = [
             "date",
+            "datetime",
             "id",
             "title",
         ]
@@ -153,6 +154,11 @@ class StreamYardDownload:
             .dt.tz_convert("America/Sao_Paulo")
             .dt.date
         )
+        stream_df["datetime"] = (
+            pd.to_datetime(stream_df.startedAt)
+            .dt.tz_convert("America/Sao_Paulo").dt.strftime('%Y%m%d_%H%M%S')
+        )
+          
         stream_df = stream_df[columns]
 
         return stream_df.query(
@@ -164,11 +170,13 @@ class StreamYardDownload:
         logger.info("Separando Broadcast Para Download")
         broadcast_to_download = []
         for broadcast in broadcasts:
-            file_name = re.sub("[\W]+", "", broadcast.get("title").replace(" ", "_"))
+            file_name = re.sub('[\W]+', '', broadcast.get('title').replace(' ', '_')).rstrip().lstrip()
+            file_name = (f"{file_name}_{broadcast.get('datetime')}").lower()
             broadcast_to_download.append(
                 dict(
                     stream_id=broadcast.get("id"),
                     stream_date=broadcast.get("date"),
+                    stream_datetime=broadcast.get("datetime"),
                     file_name=file_name,
                     audio_filename=f"{file_name}.mp3",
                     video_filename=f"{file_name}.mp4",
@@ -247,9 +255,9 @@ class StreamYardDownload:
     def start_download(self):
         self.login()
         download_list = self.create_download_list()
-        options = ""
+        options = """"""
         for index, item in enumerate(download_list):
-            options += f"** ID:{index} - STREAM:{item.get('file_name')} - DATE:{item.get('stream_date')}\n"
+            options += f"** ID:{index} - STREAM:{item.get('file_name')} - DATE:{item.get('stream_datetime')}\n    "
 
         to_download = []
         if self.list_choise:
@@ -260,9 +268,11 @@ class StreamYardDownload:
             EXEMPLOS:
                 0,1,2,3 Para baixar os IDs 0,1,2,3
                 1 - Para baixar apenas o ID 1
+
             IDs para donwload: 
 
             ##### LISTA DE STREAMS #####:
+            
             {options}
 
             Selecione os IDs: 
