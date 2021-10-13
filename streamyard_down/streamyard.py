@@ -12,6 +12,7 @@ import requests
 from loguru import logger
 
 import streamyard_down.config as cfg
+import streamyard_down.s3 as s3
 
 
 class StreamYardDownload:
@@ -24,8 +25,11 @@ class StreamYardDownload:
         new_login=False,
         threads=1,
         chuck_size=1024,
-        upload=False,
         list_choise=False,
+        upload=False,
+        bucket=None,
+        prefix=None
+
     ):
         self.email = email
         self.path = path
@@ -33,6 +37,8 @@ class StreamYardDownload:
         self.chuck_size = chuck_size
         self.new_login = new_login
         self.upload = upload
+        self.bucket = bucket
+        self.prefix = prefix
         self.start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
         self.end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
         self.request_session = self.create_session()
@@ -47,9 +53,10 @@ class StreamYardDownload:
         show_log = True
         previus_done = None
         os.makedirs(self.path, exist_ok=True)
-        with open(os.path.join(self.path, file_name), "wb") as f:
+        full_file = os.path.join(self.path, file_name)
+        with open(full_file, "wb") as f:
             logger.info(
-                f"Downloading {file_name} para {os.path.join(self.path,file_name)}"
+                f"Downloading {file_name} para {full_file}"
             )
 
             response = self.request_session.get(request_url, stream=True)
@@ -74,15 +81,15 @@ class StreamYardDownload:
 
         # TODO implement upload
         if self.upload:
-            pass
+            s3.send_to_s3(full_file,self.bucket,self.prefix)
 
     def get_cookie(self):
         logger.info("Carregando Cookie")
         self.request_session.get(cfg.TOKEN_URL)
         self.TOKEN = self.request_session.cookies["csrfToken"]
 
-    @staticmethod
-    def payload_token(token):
+
+    def payload_token(self,token):
         return dict(email=self.email, csrfToken=token)
 
     def request_code(self):
@@ -94,13 +101,12 @@ class StreamYardDownload:
             headers=dict(Referer=cfg.CODE_URL),
         )
 
-    @staticmethod
-    def read_email_code():
+    def read_email_code(self):
         logger.info("Carregando Cookie")
         return input(f"Insira o código de login enviado para {self.email}:")
 
-    @staticmethod
-    def payload_login(token, email_code):
+
+    def payload_login(self,token, email_code):
         return dict(email=self.email, csrfToken=token, otpToken=email_code)
 
     def login(self):
@@ -164,6 +170,7 @@ class StreamYardDownload:
         return stream_df.query(
             "date >= @self.start_date and date <= @self.end_date"
         ).to_dict(orient="records")
+        
 
     def create_download_list(self):
         broadcasts = self.list_past_broadcast()
@@ -234,7 +241,7 @@ class StreamYardDownload:
             download_url = self.request_session.get(
                 cfg.DOWNLOAD_URL.format(stream_id=stream_id)
             )
-
+            
             if json.loads(download_url.text).get("audioUrl"):
                 logger.info(f"Download do audio")
                 self.download_file(
