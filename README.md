@@ -6,6 +6,7 @@ Download Finished Broadcast from StreamYard
 ```shell
 pip install git+https://github.com/gabubellon/streamyard-downloader
 ```
+
 # Usage
 
 Call python script with `streamyard-downloader --email some@email.com`, `--email` has the unique necessary parameter.
