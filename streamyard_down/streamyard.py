@@ -43,13 +43,14 @@ class StreamYardDownload:
         self.end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
         self.request_session = self.create_session()
         self.list_choise = list_choise
+        self._types=["individualAudio","video"]
         self.quit = False
 
     def create_session(self):
         logger.info("Criando Sessão")
         return requests.session()
 
-    def download_file(self, file_name, request_url):
+    def download_file(self, file_name, request_url,zip=False):
         show_log = True
         previus_done = None
         os.makedirs(self.path, exist_ok=True)
@@ -62,7 +63,7 @@ class StreamYardDownload:
             response = self.request_session.get(request_url, stream=True)
             total_length = response.headers.get("content-length")
 
-            if total_length is None:
+            if total_length is None or zip:
                 f.write(response.content)
             else:
                 dl = 0
@@ -187,6 +188,7 @@ class StreamYardDownload:
                     file_name=file_name,
                     audio_filename=f"{file_name}.mp3",
                     video_filename=f"{file_name}.mp4",
+                    indivial_filename=f"{file_name}.zip"
                 )
             )
         return broadcast_to_download
@@ -208,6 +210,7 @@ class StreamYardDownload:
             file_name = stream_info.get("file_name")
             video_filename = stream_info.get("video_filename")
             audio_filename = stream_info.get("audio_filename")
+            indivial_filename = stream_info.get("indivial_filename")
 
             logger.info(f"Download stream id:{stream_id} name:{file_name}")
 
@@ -238,24 +241,34 @@ class StreamYardDownload:
 
                 time.sleep(10)
 
-            download_url = self.request_session.get(
-                cfg.DOWNLOAD_URL.format(stream_id=stream_id)
-            )
-            
-            if json.loads(download_url.text).get("audioUrl"):
-                logger.info(f"Download do audio")
-                self.download_file(
-                    file_name=audio_filename,
-                    request_url=json.loads(download_url.text).get("audioUrl"),
+            for type in self._types:
+                download_url = self.request_session.get(
+                    cfg.DOWNLOAD_URL.format(stream_id=stream_id,type=type)
                 )
+                
+                if type=="individualAudio" and json.loads(download_url.text).get("audioUrl"):
+                    logger.info(f"Download do zip")
+                    self.download_file(
+                        file_name=indivial_filename,
+                        request_url=json.loads(download_url.text).get("audioUrl"),
+                        zip=False
+                    )
 
-            if json.loads(download_url.text).get("videoUrl"):
-                logger.info(f"Download do video")
-                self.download_file(
-                    file_name=video_filename,
-                    request_url=json.loads(download_url.text).get("videoUrl"),
-                )
+                if type=="video": 
 
+                    if json.loads(download_url.text).get("videoUrl"):
+                        logger.info(f"Download do video")
+                        self.download_file(
+                            file_name=video_filename,
+                            request_url=json.loads(download_url.text).get("videoUrl"),
+                        )
+
+                    if json.loads(download_url.text).get("audioUrl"):
+                        logger.info(f"Download do audio")
+                        self.download_file(
+                            file_name=audio_filename,
+                            request_url=json.loads(download_url.text).get("audioUrl"),
+                        )
             return file_name
         return
 
