@@ -1,4 +1,4 @@
-# streamyeard-donwloader
+# streamyard-downloader
 Download Finished Broadcast from StreamYard
 
  # Install

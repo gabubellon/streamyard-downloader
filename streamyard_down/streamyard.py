@@ -193,7 +193,7 @@ class StreamYardDownload:
             )
         return broadcast_to_download
 
-    def dowload(self, broadcast_to_download):
+    def download(self, broadcast_to_download):
         with ProcessPoolExecutor(max_workers=int(self.threads)) as executor:
             future_executor = {
                 executor.submit(self.download_broadcast, item): item.get("stream_id")
@@ -245,7 +245,7 @@ class StreamYardDownload:
                 download_url = self.request_session.get(
                     cfg.DOWNLOAD_URL.format(stream_id=stream_id,type=type)
                 )
-                
+
                 if type=="individualAudio" and json.loads(download_url.text).get("audioUrl"):
                     logger.info(f"Download do zip")
                     self.download_file(
@@ -254,7 +254,7 @@ class StreamYardDownload:
                         zip=False
                     )
 
-                if type=="video": 
+                if type=="video":
 
                     if json.loads(download_url.text).get("videoUrl"):
                         logger.info(f"Download do video")
@@ -311,6 +311,6 @@ class StreamYardDownload:
             to_download = download_list
 
         try:
-            self.dowload(to_download)
+            self.download(to_download)
         except KeyboardInterrupt:
             self.quit = True
