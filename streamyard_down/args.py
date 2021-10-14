@@ -3,7 +3,7 @@ import calendar
 from datetime import date, datetime
 
 parser = argparse.ArgumentParser(
-    description="Download finished streamns from StreamYard"
+    description="Download finished streams from StreamYard"
 )
 
 streamyard_group = parser.add_argument_group("streamyard")
@@ -21,7 +21,7 @@ streamyard_group.add_argument(
     "-lc",
     "--list_choise",
     action="store_true",
-    help="Show a list of streamns to dowload",
+    help="show a list of streams to download",
     dest="list_choise",
 )
 
@@ -63,7 +63,7 @@ streamyard_group.add_argument(
     "-nl",
     "--new_login",
     action="store_true",
-    help="Force a new login and ignore cookie cache (default: False)",
+    help="force a new login and ignore cookie cache (default: False)",
     dest="new_login",
 )
 
@@ -72,7 +72,7 @@ streamyard_group.add_argument(
     "--chuck_size",
     type=int,
     default=1024,
-    help="size in MB of chunks to downloa files (default: 1024)",
+    help="size in MB of chunks to download files (default: 1024)",
     dest="chuck_size",
 )
 
@@ -81,7 +81,7 @@ streamyard_group.add_argument(
     "--threads",
     type=int,
     default=1,
-    help="number of threads to run simultaneos (default: 1)",
+    help="number of threads to run simultaneously (default: 1)",
     dest="threads",
 )
 
@@ -89,14 +89,14 @@ s3_group.add_argument(
     "-s3",
     "--upload",
     action="store_true",
-    help="automatic upload files to a s3 bucket (defaul: False)",
+    help="automatically upload files to a s3 bucket (default: False)",
     dest="upload",
 )
 
 s3_group.add_argument(
     "--bucket",
     type=str,
-    help="s3 bucket to save files on formart s3://bucket-name",
+    help="s3 bucket to save files on format s3://bucket-name",
     dest="bucket",
 )
 
