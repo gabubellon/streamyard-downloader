@@ -11,7 +11,7 @@ pip install git+https://github.com/gabubellon/streamyard-downloader
 
 Call python script with `streamyard-downloader --email some@email.com`, `--email` has the unique necessary parameter.
 
-When see this messsage on terminal `Insira o código de login enviado para <EMAIL>:` insert the login code received on your email.
+When see this messsage on terminal `Insert the login code sent to <EMAIL>:` insert the login code received on your email.
 
 After this all past broadcast (.mp3 and . mp4) will be download to `PATH` (./file by default)
 

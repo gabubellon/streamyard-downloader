@@ -47,7 +47,7 @@ class StreamYardDownload:
         self.quit = False
 
     def create_session(self):
-        logger.info("Criando Sessão")
+        logger.info("Creating session...")
         return requests.session()
 
     def download_file(self, file_name, request_url,zip=False):
@@ -57,7 +57,7 @@ class StreamYardDownload:
         full_file = os.path.join(self.path, file_name)
         with open(full_file, "wb") as f:
             logger.info(
-                f"Downloading {file_name} para {full_file}"
+                f"Downloading {file_name} to {full_file}"
             )
 
             response = self.request_session.get(request_url, stream=True)
@@ -76,7 +76,7 @@ class StreamYardDownload:
                     if done != previus_done:
                         show_log = True
                     if done in range(0, 100, 5) and show_log:
-                        logger.info(f"Donwload do arquivo {file_name} em {done}%")
+                        logger.info(f"Download progress of file {file_name} is at {done}%")
                         show_log = False
                         previus_done = done
 
@@ -85,7 +85,7 @@ class StreamYardDownload:
             s3.send_to_s3(full_file,self.bucket,self.prefix)
 
     def get_cookie(self):
-        logger.info("Carregando Cookie")
+        logger.info("Loading cookie...")
         self.request_session.get(cfg.TOKEN_URL)
         self.TOKEN = self.request_session.cookies["csrfToken"]
 
@@ -94,7 +94,7 @@ class StreamYardDownload:
         return dict(email=self.email, csrfToken=token)
 
     def request_code(self):
-        logger.info("Requisitando Código")
+        logger.info("Requesting code...")
 
         self.request_session.post(
             cfg.CODE_URL,
@@ -103,18 +103,18 @@ class StreamYardDownload:
         )
 
     def read_email_code(self):
-        logger.info("Carregando Cookie")
-        return input(f"Insira o código de login enviado para {self.email}:")
+        logger.info("Loading cookie...")
+        return input(f"Insert the login code sent to {self.email}:")
 
 
     def payload_login(self,token, email_code):
         return dict(email=self.email, csrfToken=token, otpToken=email_code)
 
     def login(self):
-        logger.info("Acessando StreamYard")
+        logger.info("Acessing StreamYard...")
 
         if self.new_login:
-            logger.info("Novo Login")
+            logger.info("New login")
             self.get_cookie()
             self.request_code()
 
@@ -124,11 +124,11 @@ class StreamYardDownload:
                 headers=dict(Referer=cfg.LOGIN_URL),
             )
         elif os.path.exists("./cache_session.pkl"):
-            logger.info("Carregando Cache")
+            logger.info("Loading cache...")
             with open("./cache_session.pkl", "rb") as f:
                 self.request_session.cookies.update(pickle.load(f))
         else:
-            logger.info("Login Necessário")
+            logger.info("Login is necessary")
             self.get_cookie()
             self.request_code()
 
@@ -145,7 +145,7 @@ class StreamYardDownload:
 
     def list_past_broadcast(self):
         logger.info(
-            f"Carregando Broadcast entre os dias {self.start_date.strftime('%Y-%m-%d') } e {self.end_date.strftime('%Y-%m-%d') }"
+            f"Loading broadcasts between {self.start_date.strftime('%Y-%m-%d') } and {self.end_date.strftime('%Y-%m-%d') }"
         )
         last_broadcast = self.request_session.get(cfg.LIST_PAST_URL)
 
@@ -165,17 +165,17 @@ class StreamYardDownload:
             pd.to_datetime(stream_df.startedAt)
             .dt.tz_convert("America/Sao_Paulo").dt.strftime('%Y%m%d_%H%M%S')
         )
-          
+
         stream_df = stream_df[columns]
 
         return stream_df.query(
             "date >= @self.start_date and date <= @self.end_date"
         ).to_dict(orient="records")
-        
+
 
     def create_download_list(self):
         broadcasts = self.list_past_broadcast()
-        logger.info("Separando Broadcast Para Download")
+        logger.info("Gathering broadcasts to download...")
         broadcast_to_download = []
         for broadcast in broadcasts:
             file_name = re.sub('[\W]+', '', broadcast.get('title').replace(' ', '_')).rstrip().lstrip()
@@ -202,7 +202,7 @@ class StreamYardDownload:
 
         for future in futures.as_completed(future_executor):
             file_name = future.result()
-            logger.info(f"Download da stream {file_name} completo ")
+            logger.info(f"Download of stream {file_name} is now complete")
 
     def download_broadcast(self, stream_info):
         while not self.quit:
@@ -224,7 +224,7 @@ class StreamYardDownload:
             logger.info(f"{get_url.text}")
 
             while True:
-                logger.info(f"Gerando Links de download")
+                logger.info(f"Generating download links...")
 
                 # COMO A CHAMADA NEM SEMPRE FUNCIONA ESSE REQUEST RETORNA ESSE
                 make_urls = self.request_session.get(
@@ -247,7 +247,7 @@ class StreamYardDownload:
                 )
                 
                 if type=="individualAudio" and json.loads(download_url.text).get("audioUrl"):
-                    logger.info(f"Download do zip")
+                    logger.info(f"Downloading .zip file...")
                     self.download_file(
                         file_name=indivial_filename,
                         request_url=json.loads(download_url.text).get("audioUrl"),
@@ -257,14 +257,14 @@ class StreamYardDownload:
                 if type=="video": 
 
                     if json.loads(download_url.text).get("videoUrl"):
-                        logger.info(f"Download do video")
+                        logger.info(f"Downloading video file...")
                         self.download_file(
                             file_name=video_filename,
                             request_url=json.loads(download_url.text).get("videoUrl"),
                         )
 
                     if json.loads(download_url.text).get("audioUrl"):
-                        logger.info(f"Download do audio")
+                        logger.info(f"Downloading audio file...")
                         self.download_file(
                             file_name=audio_filename,
                             request_url=json.loads(download_url.text).get("audioUrl"),
@@ -283,19 +283,19 @@ class StreamYardDownload:
         if self.list_choise:
             message = f"""
             ############################
-            LISTANDO STREAMS ENTRE OS DIAS {self.start_date.strftime('%Y-%m-%d') } e {self.end_date.strftime('%Y-%m-%d') }
-            ESCOLHA QUAIS ARQUIVOS DESEJA REALIZAR O DOWNLOAD INFORMANDO O IDs SEPARADOS POR VIRGULA(,)
-            EXEMPLOS:
-                0,1,2,3 Para baixar os IDs 0,1,2,3
-                1 - Para baixar apenas o ID 1
+            LISTING STREAMS BETWEEN {self.start_date.strftime('%Y-%m-%d') } AND {self.end_date.strftime('%Y-%m-%d') }
+            CHOOSE WHICH FILES YOU WISH TO DOWNLOAD INFORMING THEIR IDs SEPARATED BY COMMA (",")
+            EXAMPLES:
+                0,1,2,3  # to download files with IDs 0, 1, 2 and 3
+                1  # to download only the file with ID 1
 
-            IDs para donwload: 
+            IDs to download:
 
-            ##### LISTA DE STREAMS #####:
-            
+            ##### STREAM LIST #####:
+
             {options}
 
-            Selecione os IDs: 
+            Select IDs:
             """
             ids = input(message)
 
@@ -306,7 +306,7 @@ class StreamYardDownload:
                 data = download_list[int(id)]
                 escolhas += f"** ID:{id} - STREAM:{data.get('file_name')} - DATE:{data.get('stream_date')}\n"
                 to_download.append(data)
-            print(f"OS SEGUINTES IDs serão baixados {ids}\n{escolhas}")
+            print(f"The following IDs will be downloaded: {ids}\n{escolhas}")
         else:
             to_download = download_list
 
