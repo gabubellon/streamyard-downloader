@@ -43,7 +43,7 @@ class StreamYardDownload:
         self.end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
         self.request_session = self.create_session()
         self.list_choise = list_choise
-        self._types=["individualAudio","video"]
+        self._types=["individualAudio","video","mp3"]
         self.quit = False
 
     def create_session(self):
@@ -217,14 +217,14 @@ class StreamYardDownload:
 
             for type in self._types:
 
-                if type == 'video':
-                    create_url = cfg.CREATE_DOWNLOADS_URL.format(stream_id=stream_id,type="")
-                    down_url = cfg.DOWNLOAD_URL.format(stream_id=stream_id,type="")
-                    paramns = dict(csrfToken=self.LOGGED_TOKEN)
-                else:
-                    create_url =  cfg.CREATE_DOWNLOADS_URL.format(stream_id=stream_id,type='?type=individualAudio')
-                    down_url = cfg.DOWNLOAD_URL.format(stream_id=stream_id,type='?type=individualAudio')
-                    paramns = dict(csrfToken=self.LOGGED_TOKEN,type="individualAudio")
+                # if type != 'individualAudio':
+                #     create_url = cfg.CREATE_DOWNLOADS_URL.format(stream_id=stream_id,type="")
+                #     down_url = cfg.DOWNLOAD_URL.format(stream_id=stream_id,type="")
+                #     paramns = dict(csrfToken=self.LOGGED_TOKEN)
+                #else:
+                create_url =  cfg.CREATE_DOWNLOADS_URL.format(stream_id=stream_id,type=type)
+                down_url = cfg.DOWNLOAD_URL.format(stream_id=stream_id,type=type)
+                paramns = dict(csrfToken=self.LOGGED_TOKEN,type=type)
 
                 #Call the url generator
                 get_url = self.request_session.post(
