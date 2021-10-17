@@ -2,7 +2,7 @@ from pathlib import Path
 
 from setuptools import find_packages, setup
 
-VERSION = '0.0.4.dev1'
+VERSION = '0.0.5.dev1'
 
 this_dir = Path(__file__).parent
 long_description = this_dir.joinpath('README.md').read_text()
