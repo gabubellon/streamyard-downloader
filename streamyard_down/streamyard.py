@@ -214,36 +214,48 @@ class StreamYardDownload:
 
             logger.info(f"Download stream id:{stream_id} name:{file_name}")
 
-            # ESSA CHAMADA NÃO FUNCIONA PELA API, APENAS ENTRANDO NO SITE E CLICANDO NO BOTÃO
-            get_url = self.request_session.post(
-                cfg.CREATE_DOWNLOADS_URL.format(stream_id=stream_id),
-                data=dict(csrfToken=self.LOGGED_TOKEN),
-                headers=dict(Referer=cfg.BROAD_CAST_URL),
-            )
-
-            logger.info(f"{get_url.text}")
-
-            while True:
-                logger.info(f"Generating download links...")
-
-                # COMO A CHAMADA NEM SEMPRE FUNCIONA ESSE REQUEST RETORNA ESSE
-                make_urls = self.request_session.get(
-                    cfg.CREATE_DOWNLOADS_URL.format(stream_id=stream_id)
-                )
-
-                logger.info(f"{make_urls.text}")
-                status = json.loads(make_urls.text).get("status")
-
-                logger.info(f"Status: {status}")
-
-                if status != "creating":
-                    break
-
-                time.sleep(10)
 
             for type in self._types:
+
+                if type == 'video':
+                    create_url = cfg.CREATE_DOWNLOADS_URL.format(stream_id=stream_id,type="")
+                    down_url = cfg.DOWNLOAD_URL.format(stream_id=stream_id,type="")
+                    paramns = dict(csrfToken=self.LOGGED_TOKEN)
+                else:
+                    create_url =  cfg.CREATE_DOWNLOADS_URL.format(stream_id=stream_id,type='?type=individualAudio')
+                    down_url = cfg.DOWNLOAD_URL.format(stream_id=stream_id,type='?type=individualAudio')
+                    paramns = dict(csrfToken=self.LOGGED_TOKEN,type="individualAudio")
+
+                #Call the url generator
+                get_url = self.request_session.post(
+                    cfg.CREATE_DOWNLOADS_URL.format(stream_id=stream_id,type=""),
+                    data=paramns,
+                    headers=dict(Referer=cfg.BROAD_CAST_URL),
+                )
+
+                logger.info(f"{get_url.text}")
+
+                while True:
+
+                    logger.info(f"Generating download links...")
+                    logger.info(create_url)
+                    # COMO A CHAMADA NEM SEMPRE FUNCIONA ESSE REQUEST RETORNA ESSE
+                    make_urls = self.request_session.get(
+                        create_url
+                    )
+            
+                    status = json.loads(make_urls.text).get("status")
+
+                    logger.info(f"Status: {status}")
+
+                    if status != "creating":
+                        break
+
+                    time.sleep(10)
+
+            
                 download_url = self.request_session.get(
-                    cfg.DOWNLOAD_URL.format(stream_id=stream_id,type=type)
+                    down_url
                 )
 
                 if type=="individualAudio" and json.loads(download_url.text).get("audioUrl"):
